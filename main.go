@@ -95,5 +95,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error getting remote state: %s\n", err)
 		os.Exit(1)
 	}
-	fmt.Printf("%s", outputState(cfg, outputs))
+	fmt.Printf("%s\n", outputState(cfg, outputs))
 }
