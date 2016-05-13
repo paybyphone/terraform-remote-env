@@ -12,7 +12,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hashicorp/terraform/command"
 	"github.com/hashicorp/terraform/state/remote"
 )
 
@@ -29,13 +28,37 @@ type programConfig struct {
 	prefix string
 }
 
+// flagKV is a flag.Value implementation for simple parsing of key=value
+// pairs in options.
+type flagKV map[string]string
+
+// String presents the default value for the flagKV implementation.
+func (v *flagKV) String() string {
+	return ""
+}
+
+// Set is the option setter for the flagKV implementation.
+func (v *flagKV) Set(raw string) error {
+	idx := strings.Index(raw, "=")
+	if idx == -1 {
+		return fmt.Errorf("Error parsing string %s: no \"=\" character found", raw)
+	}
+	if *v == nil {
+		*v = make(map[string]string)
+	}
+
+	key, value := raw[0:idx], raw[idx+1:]
+	(*v)[key] = value
+	return nil
+}
+
 // parseArgs parses the command-line arguments given on the command line.
 func parseArgs() programConfig {
 	var cfg programConfig
 	cmdFlags := flag.NewFlagSet("args", flag.ContinueOnError)
 	cmdFlags.StringVar(&cfg.backend, "backend", "atlas", "The remote config backend to use")
 	cmdFlags.StringVar(&cfg.prefix, "prefix", "", "The prefix to add to output variables")
-	cmdFlags.Var((*command.FlagKV)(&cfg.backendConfig), "backend-config", "Backend config parameters, in k=v format")
+	cmdFlags.Var((*flagKV)(&cfg.backendConfig), "backend-config", "Backend config parameters, in k=v format")
 	cmdFlags.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s OPTIONS\n", os.Args[0])
 		cmdFlags.PrintDefaults()
@@ -48,7 +71,7 @@ func parseArgs() programConfig {
 }
 
 // getState loads the Terraform state, provided a certain config.
-func getState(cfg programConfig) (map[string]string, error) {
+func getState(cfg programConfig) (map[string]interface{}, error) {
 	client, err := remote.NewClient(cfg.backend, cfg.backendConfig)
 	if err != nil {
 		return nil, err
@@ -59,7 +82,7 @@ func getState(cfg programConfig) (map[string]string, error) {
 		return nil, err
 	}
 
-	var outputs map[string]string
+	var outputs map[string]interface{}
 	if !state.State().Empty() {
 		outputs = state.State().RootModule().Outputs
 	}
@@ -73,7 +96,7 @@ func getState(cfg programConfig) (map[string]string, error) {
 // TF_VAR_foo=bar TF_VAR_baz=qux
 //
 // Any prefix defined by "-prefix=PREFIX" is also added on.
-func outputState(cfg programConfig, outputs map[string]string) string {
+func outputState(cfg programConfig, outputs map[string]interface{}) string {
 	s := []string{}
 
 	for k, v := range outputs {

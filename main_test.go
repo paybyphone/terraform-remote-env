@@ -34,8 +34,8 @@ const remoteStateResponseText = `
 }
 `
 
-func remoteStateOutputExpected() map[string]string {
-	return map[string]string{
+func remoteStateOutputExpected() map[string]interface{} {
+	return map[string]interface{}{
 		"foo": "bar",
 		"baz": "qux",
 	}
@@ -97,7 +97,7 @@ func TestParseArgs(t *testing.T) {
 
 // testGetMockState is a helper function to TestGetState and TestOutputState_*
 // that pulls the test state from the mock HTTP server.
-func testGetMockState(t *testing.T) map[string]string {
+func testGetMockState(t *testing.T) map[string]interface{} {
 	ts := httpRemoteStateTestServer()
 	defer ts.Close()
 	cfg := testConfig()
