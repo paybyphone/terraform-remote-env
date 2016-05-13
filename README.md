@@ -24,7 +24,7 @@ page to get the latest binary release.
 
 ## Options
 
-This tool essentially takes the same options as `terraform remote config` does
+This tool essentially takes the same options as `terraform remote config` does,
 see [here][5].
 
 Output is in a single-line  `TF_VAR_foo=bar TF_VAR_baz=qux` format. With the
